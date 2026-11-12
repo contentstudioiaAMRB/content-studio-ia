@@ -1,0 +1,13 @@
+# Los scripts de Mac necesitan finales de línea LF (con CRLF, bash falla en el Mac)
+*.sh       text eol=lf
+*.command  text eol=lf
+*.py       text eol=lf
+*.md       text eol=lf
+*.txt      text eol=lf
+*.json     text eol=lf
+# Los de Windows, CRLF
+*.bat      text eol=crlf
+*.ps1      text eol=crlf
+# Binarios
+*.ttf      binary
+*.png      binary

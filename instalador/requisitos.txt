@@ -1,0 +1,10 @@
+# Versiones probadas con Content Studio IA 0.6 (todas gratuitas, desde PyPI). Requieren Python 3.12+;
+# en Mac, onnxruntime solo tiene versión para chip Apple con macOS 14+.
+faster-whisper==1.2.1
+ctranslate2==4.9.0
+av==19.0.2
+numpy==2.5.4
+onnxruntime==1.31.1
+tokenizers==0.23.3
+huggingface_hub==2.4.0
+pillow==13.0.0

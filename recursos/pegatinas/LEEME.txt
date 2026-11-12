@@ -1,0 +1,2 @@
+Pon aquí tus pegatinas en PNG con el nombre de una palabra (regalo.png, navidad.png...).
+Aparecerán cuando digas esa palabra en el vídeo.

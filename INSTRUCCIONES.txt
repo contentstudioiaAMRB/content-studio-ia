@@ -1,0 +1,54 @@
+CONTENT STUDIO IA — VERSIÓN 0.6 PARA WINDOWS Y MAC
+(etapa 1: edición · etapa 2: subtítulos, efectos, pegatinas y marca)
+
+INSTALACIÓN
+- Windows: doble clic en «1 - Instalar (Windows)». Mac: clic derecho en «1 - Instalar (Mac).command» → Abrir.
+- El instalador comprueba Python 3.12+ y FFmpeg 7+ (en Mac, ffmpeg-full con subtítulos); si faltan, explica qué son y pide permiso antes de
+  instalarlos (Windows: winget; Mac: Homebrew). Las bibliotecas (faster-whisper, Pillow) van dentro de
+  la carpeta .venv del programa, con versiones probadas (instalador/requisitos.txt).
+- Ofrece descargar ya el modelo de voz (1,6 GB) y crear el acceso directo del Escritorio.
+- Para comprobar la instalación en cualquier momento: vuelve a pasar el instalador (no repite lo hecho).
+- Las letras Poppins, Montserrat, Anton, Playfair Display y Dancing Script vienen incluidas en
+  recursos/fuentes (licencia libre OFL, ver LICENCIA-OFL-*.txt). No se instalan en el sistema.
+
+MENÚ
+1. Configurar mi marca (una sola vez): nombre, nicho, colores principal/secundario/texto, letras,
+   tamaño y posición de subtítulos, minúsculas o MAYÚSCULAS, palabras por subtítulo, palabras que
+   se destacan siempre, cómo se destacan (color o marcador), estilo general (sobrio, dinámico,
+   muy dinámico) y qué hacer con vídeos horizontales. Se guarda en marca/perfiles/<nombre>.json.
+2. Ver mi marca.
+3. Unir vídeos de entrada/ en vertical.
+4. Cortar silencios: propone cortes con sus segundos, decides uno por uno (e = escuchar), y
+   exporta en vertical 1080x1920. Al final ofrece seguir con el paso 5.
+5. Subtítulos y efectos con mi marca: reconoce tu voz en el ordenador, corriges palabras
+   («mal=bien»), y monta el vídeo con TU marca sin preguntarte el estilo:
+     - sobrio: solo subtítulos;
+     - dinámico: + zoom en cada corte y en las palabras destacadas + pegatinas;
+     - muy dinámico: + un destello en cada corte.
+6. Cambiar de usuaria (si varias comparten ordenador).
+7. Analizar mis referencias (colores y ritmo): lee REFERENCIAS y te enseña
+   - los colores que más se repiten (imagen numerada _paleta_*.png) y propone tu color principal
+     (claro, para que la palabra destacada se lea sobre el vídeo) y el secundario (marcador);
+   - cada cuánto cambia la imagen en los vídeos → propone sobrio, dinámico o muy dinámico;
+   - la duración típica.
+   Te enseña una muestra con TU vídeo (_muestra_*.png) y solo cambia tu marca si dices que sí.
+8. Salir.
+
+PEGATINAS: aparecen cuando dices ciertas palabras (regalo 🎁, navidad 🎄, favorito ⭐, adiós 👋...).
+La lista está en marca/pegatinas.json (puedes añadir «palabra»: «emoji»). Si pones un PNG en
+recursos/pegatinas con el nombre de una palabra (regalo.png), se usa tu imagen.
+
+LETRAS: tienen que estar instaladas en el ordenador o en recursos/fuentes (.ttf/.otf). Al
+configurar la marca, el programa avisa si una letra no está.
+
+REFERENCIAS: carpeta REFERENCIAS con instagram/, tiktok/, pinterest/ y otras/. Guarda ahí
+capturas (JPG/PNG) o vídeos (MP4/MOV) descargados desde la app; los enlaces no sirven. Al lado
+puedes dejar un .txt con el mismo nombre diciendo qué te gusta. Se analizan colores, ritmo y
+duración (opción 7); todavía NO la letra, los subtítulos ni los efectos de la referencia.
+
+RESULTADOS: en salida/, con nombre nuevo cada vez: *_cortado_*.mp4, *_editado_*.mp4 (final),
+.srt (texto), .edicion.json (qué se aplicó). Tus originales nunca se modifican.
+
+LIMITACIONES: de las referencias solo mide colores, ritmo y duración (los cortes que mantienen el mismo encuadre, típicos de un vídeo a cámara, no se detectan como cambio de plano); no añade música ni efectos de sonido; el corte de
+silencios no quita muletillas ni repeticiones; las pegatinas van en las esquinas superiores
+(no detecta la cara); revisa siempre el texto reconocido antes de exportar.

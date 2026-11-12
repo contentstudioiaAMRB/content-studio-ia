@@ -1,0 +1,30 @@
+# Entorno de Python (se crea al instalar)
+.venv/
+__pycache__/
+*.pyc
+
+# Carpetas personales de cada usuaria: nunca al repositorio
+entrada/
+salida/
+marca/
+REFERENCIAS/
+referencias/
+
+# Vídeos, audios y archivos de trabajo
+*.mp4
+*.mov
+*.m4v
+*.mkv
+*.webm
+*.wav
+*.mp3
+*.m4a
+*.ass
+*.srt
+*.cortes.json
+*.edicion.json
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini

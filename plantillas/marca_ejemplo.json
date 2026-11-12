@@ -1,0 +1,18 @@
+{
+  "nombre": "Marca de prueba",
+  "nicho": "belleza",
+  "colores": {"principal": "#FF6FA8", "secundario": "#7A1F24", "texto": "#FFFFFF"},
+  "tipografias": {"subtitulos": "Poppins", "destacado": "Playfair Display"},
+  "subtitulos": {
+    "tamano": 80,
+    "posicion": "pecho",
+    "mayusculas": "minusculas",
+    "palabras": 3,
+    "borde": "sombra",
+    "destacado": "color"
+  },
+  "destacar": {"palabras": ["regalo"], "automatico": true},
+  "estilo": "muy_dinamico",
+  "vertical": "rellenar",
+  "pegatinas_extra": {}
+}

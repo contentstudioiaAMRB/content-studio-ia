@@ -1,0 +1,27 @@
+CONTENT STUDIO IA — CÓMO EMPEZAR
+
+INSTALAR (LO MÁS FÁCIL)
+Abre Claude Code y pega el mensaje de instalación que te han pasado. Claude lo descarga, te pide
+permiso antes de instalar nada y al final te dice si la prueba ha salido bien.
+
+INSTALAR A MANO
+- Windows: doble clic en «1 - Instalar (Windows)». Te dirá qué tiene tu ordenador y, si falta algo
+  (Python o FFmpeg), te lo explicará y te pedirá permiso antes de instalarlo.
+  Si Windows avisa de que el archivo viene de internet: «Más información» → «Ejecutar de todas formas».
+- Mac (con chip Apple y macOS 14 o posterior): clic derecho en «1 - Instalar (Mac).command» → Abrir → Abrir.
+  Si falta algo, te lo explicará y te pedirá permiso.
+
+ABRIR EL PROGRAMA
+- Windows: acceso directo «Content Studio IA» del Escritorio (o doble clic en «Abrir Content Studio IA»).
+- Mac: «Abrir Content Studio IA.command» (clic derecho → Abrir la primera vez).
+
+LA PRIMERA VEZ
+- Opción 1 del menú: configura tu marca (una sola vez).
+- Pon tus vídeos en «entrada» y tus referencias en «REFERENCIAS».
+- Tus vídeos editados aparecen en «salida». Tus originales nunca se modifican.
+
+ACTUALIZAR A UNA VERSIÓN NUEVA
+Vuelve a pegar el mensaje de instalación en Claude Code. Tu marca, tus referencias, tus vídeos y lo
+ya instalado se conservan.
+
+Más detalles: INSTRUCCIONES.txt
