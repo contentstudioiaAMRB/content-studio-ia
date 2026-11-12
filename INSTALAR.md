@@ -119,9 +119,17 @@ Si quiere ver ese vídeo de prueba: `<python del .venv> instalador/prueba_export
 
 ## Paso 6. Explicarle cómo empezar
 
-Con `RESULTADO: OK`, díselo así de claro:
+Con `RESULTADO: OK`, **ábrele la carpeta del programa** para que la vea (no hace falta pedir permiso:
+solo abre una ventana):
+
+- Windows: `explorer "<carpeta>"` (puede devolver código 1 aunque se abra bien; no es un error).
+- Mac: `open "<carpeta>"`
+
+Después díselo así de claro:
 
 - Está instalado y la prueba de exportación ha salido bien.
+- Le acabas de abrir la carpeta **Content Studio IA** (está en Documentos): ahí están «entrada», «salida»
+  y «REFERENCIAS».
 - Para abrirlo: **Windows**, el acceso directo «Content Studio IA» del Escritorio (o doble clic en
   «Abrir Content Studio IA» dentro de la carpeta). **Mac**, clic derecho en «Abrir Content Studio IA.command»
   → Abrir (la primera vez).
