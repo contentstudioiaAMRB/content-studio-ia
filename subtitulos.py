@@ -205,6 +205,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             t = _texto(p['w'], e)
             if p.get('destacada'):
                 fd = f"\\fn{e['fuente_destacado']}" if e['fuente_destacado'] else ''
+                if e.get('cursiva_destacado'):
+                    fd += '\\i1'
                 if e.get('destacado') == 'marcador':
                     col_m = _color_ass(e.get('color_marcador') or e['color_destacado'])
                     trozos.append(f"{{\\3c{col_m}\\bord12\\shad0{fd}\\fscx108\\fscy108}}{t}{{\\r}}")

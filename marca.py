@@ -18,15 +18,17 @@ try:   # si las respuestas llegan por tubería (pruebas), que las tildes se lean
         sys.stdin.reconfigure(encoding='utf-8')
 except Exception:
     pass
-CARPETA = ROOT / 'marca' / 'perfiles'
-ACTIVA = ROOT / 'marca' / 'activa.txt'
+import os
+TRABAJO = Path(os.environ.get('CONTENT_STUDIO_CARPETA') or ROOT)   # carpeta de la usuaria
+CARPETA = TRABAJO / 'marca' / 'perfiles'
+ACTIVA = TRABAJO / 'marca' / 'activa.txt'
 FUENTES_PROPIAS = ROOT / 'recursos' / 'fuentes'
 
 PLANTILLA = {
     'nombre': '',
     'nicho': '',
     'colores': {'principal': '#E8C77A', 'secundario': '#7A1F24', 'texto': '#FFFFFF'},
-    'tipografias': {'subtitulos': 'Poppins', 'destacado': ''},
+    'tipografias': {'subtitulos': 'Poppins', 'destacado': '', 'destacado_cursiva': False},
     'subtitulos': {
         'tamano': 80,              # píxeles sobre 1080x1920
         'posicion': 'pecho',       # pecho | centro | abajo
@@ -165,6 +167,18 @@ def activo():
     return cargar(ruta)
 
 
+ESTILO_BASE = ROOT / 'plantillas' / 'estilo_base.json'
+
+
+def base_inicial(nombre=''):
+    """La ficha de partida: la plantilla con el estilo de la casa (plantillas/estilo_base.json) encima."""
+    extra = {}
+    if ESTILO_BASE.exists():
+        extra = json.loads(ESTILO_BASE.read_text(encoding='utf-8'))
+        extra.pop('descripcion', None)
+    return _fusionar(PLANTILLA, {**extra, 'nombre': nombre})
+
+
 def activar(ruta):
     ACTIVA.write_text(Path(ruta).name, encoding='utf-8')
 
@@ -180,6 +194,7 @@ def estilo_subtitulos(perfil):
         'fuente': t['subtitulos'] or 'Arial',
         'negrita': True,
         'fuente_destacado': t.get('destacado', ''),
+        'cursiva_destacado': bool(t.get('destacado_cursiva')),
         'tamano': int(s['tamano']),
         'color': c.get('texto', '#FFFFFF'),
         'color_destacado': c['principal'],
@@ -198,7 +213,8 @@ def resumen(p):
     return '\n'.join([
         f"  Nombre: {p['nombre']}   ·   Nicho: {p['nicho'] or '—'}",
         f"  Colores: principal {c['principal']} · secundario {c['secundario']} · texto {c['texto']}",
-        f"  Letras: subtítulos {t['subtitulos']} · destacado {t['destacado'] or '(la misma)'}",
+        f"  Letras: subtítulos {t['subtitulos']} · destacado {t['destacado'] or '(la misma)'}"
+        f"{' en cursiva' if t.get('destacado_cursiva') else ''}",
         f"  Subtítulos: {s['tamano']} px · {s['posicion']} · {s['mayusculas']} · {s['palabras']} palabra(s) · "
         f"borde {s['borde']} · destacado con {s['destacado']}",
         f"  Palabras que siempre se destacan: {dest}"

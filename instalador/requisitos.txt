@@ -1,4 +1,4 @@
-# Versiones probadas con Content Studio IA 0.6 (todas gratuitas, desde PyPI). Requieren Python 3.12+;
+# Versiones probadas con Content Studio IA 0.7 (todas gratuitas, desde PyPI). Requieren Python 3.12+;
 # en Mac, onnxruntime solo tiene versión para chip Apple con macOS 14+.
 faster-whisper==1.2.1
 ctranslate2==4.9.0

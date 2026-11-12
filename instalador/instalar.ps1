@@ -1,4 +1,4 @@
-﻿# Content Studio IA - instalador para Windows (v0.6)
+﻿# Content Studio IA - instalador para Windows (v0.7)
 # Comprueba lo que hace falta y, si falta algo, explica qué es y pide permiso antes de instalarlo.
 # No cambia ajustes de seguridad de Windows. Todo lo de Python va dentro de la carpeta del programa (.venv).
 #
@@ -90,7 +90,7 @@ function Comprobar {
 }
 
 Write-Host ''
-Write-Host 'CONTENT STUDIO IA 0.6 - INSTALACIÓN EN WINDOWS' -ForegroundColor Magenta
+Write-Host 'CONTENT STUDIO IA 0.7 - INSTALACIÓN EN WINDOWS' -ForegroundColor Magenta
 Write-Host "Carpeta del programa: $Raiz"
 RefrescarPath
 

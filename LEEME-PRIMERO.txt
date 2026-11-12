@@ -11,14 +11,17 @@ INSTALAR A MANO
 - Mac (con chip Apple y macOS 14 o posterior): clic derecho en «1 - Instalar (Mac).command» → Abrir → Abrir.
   Si falta algo, te lo explicará y te pedirá permiso.
 
-ABRIR EL PROGRAMA
+EDITAR TU VÍDEO (HABLANDO CON CLAUDE)
+1. Pon tu vídeo en la carpeta «entrada» de Escritorio → Content Studio ediciones.
+2. Abre Claude, pestaña Code, y empieza una conversación nueva con esa carpeta.
+3. Escribe:  Hola, edita mi vídeo
+4. Tu vídeo editado aparece en «salida». Tus originales nunca se modifican.
+(Estos pasos también están en el archivo «EMPIEZA AQUÍ» de tu carpeta.)
+
+SIN CLAUDE (MENÚ CLÁSICO)
 - Windows: acceso directo «Content Studio IA» del Escritorio (o doble clic en «Abrir Content Studio IA»).
 - Mac: «Abrir Content Studio IA.command» (clic derecho → Abrir la primera vez).
-
-LA PRIMERA VEZ
-- Opción 1 del menú: configura tu marca (una sola vez).
-- Pon tus vídeos en «entrada» y tus referencias en «REFERENCIAS».
-- Tus vídeos editados aparecen en «salida». Tus originales nunca se modifican.
+- La primera vez, opción 1 del menú para configurar tu marca.
 
 ACTUALIZAR A UNA VERSIÓN NUEVA
 Vuelve a pegar el mensaje de instalación en Claude Code. Tu marca, tus referencias, tus vídeos y lo

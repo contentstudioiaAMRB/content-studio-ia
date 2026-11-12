@@ -1,6 +1,7 @@
 # Content Studio IA
 
-Editor de vídeos verticales para creadoras de contenido que funciona en tu ordenador (Windows y Mac):
+Editor de vídeos verticales para creadoras de contenido que funciona en tu ordenador (Windows y Mac).
+Se usa desde el chat de Claude Code con su propia skill: le pides con tus palabras «edita mi vídeo, quita los silencios, ponle subtítulos con mis colores y stickers» y Claude lo hace. Cada usuaria tiene su carpeta «Content Studio ediciones» en el Escritorio.
 
 - **Cortes automáticos** de silencios, que apruebas uno por uno, y paso a vertical 1080×1920.
 - **Subtítulos automáticos** con reconocimiento de voz local (tus vídeos no salen de tu ordenador).
@@ -20,6 +21,15 @@ Instala Content Studio IA siguiendo https://raw.githubusercontent.com/contentstu
 
 Claude descarga el programa en `Documentos/Content Studio IA`, comprueba Python y FFmpeg, te pide permiso
 para lo que falte, instala las bibliotecas dentro de la carpeta del programa y pasa una prueba de exportación.
+
+## Editar tu primer vídeo
+
+1. Pon tu vídeo en la carpeta **entrada** de `Escritorio/Content Studio ediciones`.
+2. En Claude, pestaña **Code**, empieza una conversación nueva con la carpeta **Content Studio ediciones**.
+3. Escribe: **Hola, edita mi vídeo**
+4. Tu vídeo editado aparece en **salida**. Tu original no se toca.
+
+## Instalar a mano
 
 También puedes instalarlo a mano: descarga el ZIP (botón **Code → Download ZIP**) y sigue `LEEME-PRIMERO.txt`.
 

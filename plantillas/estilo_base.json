@@ -1,0 +1,16 @@
+{
+  "descripcion": "Estilo de partida de Content Studio IA: elegante y cálido, para belleza y estilo de vida. Subtítulos cortos en minúsculas, blancos con sombra suave, y la palabra importante en letra elegante cursiva color crema dorado.",
+  "colores": {"principal": "#EAD3A8", "secundario": "#A5414A", "texto": "#FFFFFF"},
+  "tipografias": {"subtitulos": "Poppins", "destacado": "Playfair Display", "destacado_cursiva": true},
+  "subtitulos": {
+    "tamano": 80,
+    "posicion": "pecho",
+    "mayusculas": "minusculas",
+    "palabras": 3,
+    "borde": "sombra",
+    "destacado": "color"
+  },
+  "destacar": {"palabras": [], "automatico": true},
+  "estilo": "dinamico",
+  "vertical": "recortar"
+}

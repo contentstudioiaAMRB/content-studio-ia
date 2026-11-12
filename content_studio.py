@@ -1,4 +1,4 @@
-"""Content Studio IA - versión 0.6.
+"""Content Studio IA - versión 0.7.
 
 Funciones:
   1. Ficha de marca (marca/perfil.json).
@@ -29,11 +29,19 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-VERSION = '0.6'
+VERSION = '0.7'
 ROOT = Path(__file__).resolve().parent
-ENTRADA = ROOT / 'entrada'
-SALIDA = ROOT / 'salida'
-PROFILE = ROOT / 'marca' / 'perfil.json'
+
+# Carpeta de trabajo de la usuaria (sus vídeos, su marca, sus editados). Por defecto, la del programa.
+# Con «--carpeta <ruta>» en cualquier orden, cada chica trabaja en su propia carpeta.
+if '--carpeta' in sys.argv[1:-1]:
+    _i = sys.argv.index('--carpeta')
+    os.environ['CONTENT_STUDIO_CARPETA'] = str(Path(sys.argv[_i + 1]).expanduser().resolve())
+    del sys.argv[_i:_i + 2]
+TRABAJO = Path(os.environ.get('CONTENT_STUDIO_CARPETA') or ROOT)
+ENTRADA = TRABAJO / 'entrada'
+SALIDA = TRABAJO / 'salida'
+PROFILE = TRABAJO / 'marca' / 'perfil.json'
 FUENTES = ROOT / 'recursos' / 'fuentes'
 VENV_PY = ROOT / '.venv' / ('Scripts/python.exe' if sys.platform == 'win32' else 'bin/python')
 
@@ -65,17 +73,19 @@ MODOS = {
     'rellenar': 'Conservar el vídeo completo con relleno difuminado arriba y abajo',
 }
 
-REFERENCIAS = ROOT / 'REFERENCIAS'
+REFERENCIAS = TRABAJO / 'REFERENCIAS'
 
 
 def preparar_carpetas():
-    for d in ('entrada', 'salida', 'marca', 'recursos', 'recursos/fuentes', 'recursos/pegatinas'):
+    for d in ('recursos', 'recursos/fuentes', 'recursos/pegatinas'):
         (ROOT / d).mkdir(parents=True, exist_ok=True)
+    for d in ('entrada', 'salida', 'marca'):
+        (TRABAJO / d).mkdir(parents=True, exist_ok=True)
     # la antigua carpeta «referencias» pasa a llamarse REFERENCIAS (con su contenido)
-    for p in ROOT.iterdir():
+    for p in TRABAJO.iterdir():
         if p.is_dir() and p.name.lower() == 'referencias' and p.name != 'REFERENCIAS':
-            p.rename(ROOT / '__ref_tmp')
-            (ROOT / '__ref_tmp').rename(REFERENCIAS)
+            p.rename(TRABAJO / '__ref_tmp')
+            (TRABAJO / '__ref_tmp').rename(REFERENCIAS)
     for sub in ('instagram', 'tiktok', 'pinterest', 'otras'):
         (REFERENCIAS / sub).mkdir(parents=True, exist_ok=True)
     leeme = REFERENCIAS / 'LEEME.txt'
@@ -244,30 +254,8 @@ def unir():
     if ask('¿Unirlos en este orden? (s/n)', 's').lower() != 's':
         return
     modo = elegir_modo()
-    with tempfile.TemporaryDirectory() as td:
-        normalizados = []
-        for i, p in enumerate(clips):
-            tiene_audio = info_video(p)['audio']
-            out = Path(td) / f'clip_{i:03d}.mp4'
-            cmd = ['ffmpeg', '-v', 'error', '-y', '-i', str(p)]
-            if not tiene_audio:
-                cmd += ['-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=48000']
-            cmd += ['-filter_complex', f'[0:v:0]fps={FPS},{filtro_vertical(modo)}[v]',
-                    '-map', '[v]', '-map', '0:a:0' if tiene_audio else '1:a:0',
-                    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
-                    '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-ac', '2']
-            if not tiene_audio:
-                cmd += ['-shortest']
-            cmd += [str(out)]
-            print('Procesando', p.name, '...')
-            run(cmd)
-            normalizados.append(out)
-        lst = Path(td) / 'lista.txt'
-        lst.write_text(''.join("file '" + str(p).replace("'", "'\\''") + "'\n" for p in normalizados),
-                       encoding='utf-8')
-        out = nombre_unico('reel_unido')
-        run(['ffmpeg', '-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', str(lst),
-             '-c', 'copy', '-movflags', '+faststart', str(out)])
+    print('Uniendo los vídeos...')
+    out = unir_clips(clips, modo)
     print('VIDEO CREADO:', out)
 
 
@@ -507,7 +495,7 @@ def subtitular(video, correcciones=None, destacar_extra=None, perfil=None, aviso
     import marca
     import subtitulos as st
     import efectos as fx
-    perfil = perfil or marca.activo() or marca._fusionar(marca.PLANTILLA, {'nombre': '(sin marca)'})
+    perfil = perfil or marca.activo() or marca.base_inicial('(sin marca)')
     estilo = marca.estilo_subtitulos(perfil)
     opciones = efectos_forzados if efectos_forzados is not None else marca.efectos(perfil)
 
@@ -529,7 +517,7 @@ def subtitular(video, correcciones=None, destacar_extra=None, perfil=None, aviso
 
     cortes_json = Path(video).with_suffix('.cortes.json')
     cortes_s = fx.cortes_desde_json(cortes_json)
-    lista = fx.cargar_lista(ROOT / 'marca' / 'pegatinas.json')
+    lista = fx.cargar_lista(TRABAJO / 'marca' / 'pegatinas.json')
     lista.update({fx._limpia(k): v for k, v in perfil.get('pegatinas_extra', {}).items()})
     info = {}
 
@@ -773,6 +761,298 @@ def cli_subtitular(argv):
     return 0
 
 
+# ---------------------------------------------------------------- órdenes para el chat de Claude
+# Todo sin preguntas: Claude pregunta en el chat (con botones) y luego llama a estas órdenes.
+# Cada orden termina con una línea «RESULTADO: {json}» que Claude lee.
+
+def _resultado(datos, codigo=0):
+    print('RESULTADO: ' + json.dumps(datos, ensure_ascii=False))
+    return codigo
+
+
+def _normalizar_marca(p):
+    """Corrige valores que llegan del chat (colores por nombre, letras, opciones válidas)."""
+    import marca
+    avisos = []
+    base = marca.PLANTILLA
+    for k in ('principal', 'secundario', 'texto'):
+        p['colores'][k] = marca.color(str(p['colores'].get(k) or ''), base['colores'][k])
+    for k in ('subtitulos', 'destacado'):
+        nombre = (p['tipografias'].get(k) or '').strip()
+        if not nombre:
+            if k == 'subtitulos':
+                p['tipografias'][k] = base['tipografias'][k]
+            continue
+        exacta, parecidas = marca.comprobar_fuente(nombre)
+        if exacta:
+            p['tipografias'][k] = exacta
+        else:
+            avisos.append(f'La letra «{nombre}» no está en este ordenador; se usa Poppins'
+                          + (f' (parecidas: {", ".join(parecidas)})' if parecidas else '') + '.')
+            p['tipografias'][k] = 'Poppins' if k == 'subtitulos' else ''
+    s, sb = p['subtitulos'], base['subtitulos']
+    validos = {'posicion': ('pecho', 'centro', 'abajo'), 'mayusculas': ('minusculas', 'mayusculas', 'normal'),
+               'borde': ('sombra', 'contorno', 'ninguno'), 'destacado': ('color', 'marcador')}
+    for k, opciones in validos.items():
+        if s.get(k) not in opciones:
+            s[k] = sb[k]
+    try:
+        s['tamano'] = min(140, max(48, int(s['tamano'])))
+    except (TypeError, ValueError):
+        s['tamano'] = sb['tamano']
+    try:
+        s['palabras'] = min(3, max(1, int(s['palabras'])))
+    except (TypeError, ValueError):
+        s['palabras'] = sb['palabras']
+    if p.get('estilo') not in marca.ESTILOS:
+        p['estilo'] = base['estilo']
+    if p.get('vertical') not in MODOS:
+        p['vertical'] = base['vertical']
+    if isinstance(p['destacar'].get('palabras'), str):
+        p['destacar']['palabras'] = [x.strip() for x in p['destacar']['palabras'].split(',') if x.strip()]
+    return avisos
+
+
+def muestra_marca(perfil, video=None):
+    """PNG 1080x1920 con un subtítulo de ejemplo en el estilo de la marca (sobre el vídeo o un fondo)."""
+    import marca
+    import subtitulos as st
+    destino = nombre_unico('muestra_marca', '.png')
+    estilo = marca.estilo_subtitulos(perfil)
+    subs = [{'inicio': 0.0, 'fin': 99.0, 'palabras': [
+        {'w': 'así', 'start': 0, 'end': 1}, {'w': 'se', 'start': 0, 'end': 1},
+        {'w': 'verán', 'start': 0, 'end': 1, 'destacada': True}]}]
+    with tempfile.TemporaryDirectory() as td:
+        st.generar_ass(subs, estilo, Path(td) / 'subs.ass')
+        (Path(td) / 'fuentes').mkdir()
+        for f in FUENTES.iterdir():
+            if f.suffix.lower() in ('.ttf', '.otf'):
+                (Path(td) / 'fuentes' / f.name).write_bytes(f.read_bytes())
+        if video:
+            entrada = ['-ss', '1', '-i', str(Path(video).resolve())]
+            previo = f'{filtro_vertical(perfil["vertical"])},'
+        else:
+            entrada = ['-f', 'lavfi', '-i', f'color=c=0x5A5A66:s={ANCHO}x{ALTO}']
+            previo = ''
+        p = subprocess.run(['ffmpeg', '-v', 'error', '-y', *entrada, '-frames:v', '1',
+                            '-vf', f'{previo}subtitles=subs.ass:fontsdir=fuentes', str(destino)],
+                           cwd=td, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                           encoding='utf-8', errors='replace')
+        if p.returncode:
+            raise RuntimeError(p.stderr[-1000:])
+    return destino
+
+
+def cli_marca(argv):
+    import marca
+    ap = argparse.ArgumentParser(prog='content_studio.py marca')
+    ap.add_argument('accion', choices=['ver', 'guardar', 'cambiar', 'activar', 'muestra'])
+    ap.add_argument('--datos', default='', help='JSON con los campos de la ficha (guardar/cambiar)')
+    ap.add_argument('--archivo', default='', help='archivo JSON con los datos, en vez de --datos')
+    ap.add_argument('--nombre', default='', help='usuaria a activar')
+    ap.add_argument('--video', default='', help='muestra: vídeo de fondo')
+    a = ap.parse_args(argv)
+
+    if a.accion == 'ver':
+        p = marca.activo()
+        return _resultado({'activa': p, 'usuarias': [marca.cargar(r)['nombre'] for r in marca.listar()],
+                           'estilo_de_partida': marca.base_inicial(),
+                           'estilos': {k: v[0] for k, v in marca.ESTILOS.items()},
+                           'letras_incluidas': ['Poppins', 'Montserrat', 'Anton', 'Playfair Display',
+                                                'Dancing Script']})
+    if a.accion == 'activar':
+        for r in marca.listar():
+            if marca.cargar(r)['nombre'].lower() == a.nombre.lower() or r.stem == marca._slug(a.nombre):
+                marca.activar(r)
+                return _resultado({'activa': marca.cargar(r)})
+        return _resultado({'error': f'No hay ninguna usuaria llamada «{a.nombre}».'}, 1)
+    if a.accion == 'muestra':
+        p = marca.activo() or marca.base_inicial('(sin marca)')
+        return _resultado({'muestra': str(muestra_marca(p, a.video or None))})
+
+    texto = Path(a.archivo).read_text(encoding='utf-8') if a.archivo else a.datos
+    try:
+        datos = json.loads(texto or '{}')
+    except json.JSONDecodeError as e:
+        return _resultado({'error': f'Datos de marca no válidos: {e}'}, 1)
+    base = marca.activo() if a.accion == 'cambiar' else None
+    if a.accion == 'cambiar' and base is None:
+        return _resultado({'error': 'Todavía no hay marca: usa «guardar».'}, 1)
+    p = marca._fusionar(base or marca.base_inicial(), datos)
+    if not str(p.get('nombre', '')).strip():
+        return _resultado({'error': 'Falta el nombre de la usuaria.'}, 1)
+    avisos = _normalizar_marca(p)
+    ruta = marca.guardar(p)
+    return _resultado({'guardada': str(ruta), 'marca': p, 'avisos': avisos,
+                       'muestra': str(muestra_marca(p))})
+
+
+def unir_clips(clips, modo):
+    """Une los vídeos en el orden dado en un vertical 1080x1920. Devuelve la ruta."""
+    with tempfile.TemporaryDirectory() as td:
+        normalizados = []
+        for i, p in enumerate(clips):
+            tiene_audio = info_video(p)['audio']
+            out = Path(td) / f'clip_{i:03d}.mp4'
+            cmd = ['ffmpeg', '-v', 'error', '-y', '-i', str(p)]
+            if not tiene_audio:
+                cmd += ['-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=48000']
+            cmd += ['-filter_complex', f'[0:v:0]fps={FPS},{filtro_vertical(modo)}[v]',
+                    '-map', '[v]', '-map', '0:a:0' if tiene_audio else '1:a:0',
+                    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
+                    '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-ac', '2']
+            if not tiene_audio:
+                cmd += ['-shortest']
+            run(cmd + [str(out)])
+            normalizados.append(out)
+        lst = Path(td) / 'lista.txt'
+        lst.write_text(''.join("file '" + str(p).replace("'", "'\\''") + "'\n" for p in normalizados),
+                       encoding='utf-8')
+        out = nombre_unico('reel_unido')
+        run(['ffmpeg', '-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', str(lst),
+             '-c', 'copy', '-movflags', '+faststart', str(out)])
+    return out
+
+
+def cli_editar(argv):
+    """Edición completa de una vez: (unir) -> cortar silencios -> subtítulos y efectos de la marca."""
+    import marca
+    ap = argparse.ArgumentParser(prog='content_studio.py editar')
+    ap.add_argument('videos', nargs='+', help='uno o varios vídeos (varios = se unen en ese orden)')
+    ap.add_argument('--sin-cortes', action='store_true', help='no quitar silencios')
+    ap.add_argument('--sin-subtitulos', action='store_true', help='solo cortes y vertical')
+    ap.add_argument('--estilo', choices=list(marca.ESTILOS), default=None, help='solo para este vídeo')
+    ap.add_argument('--destacar', default='', help='palabras extra solo para este vídeo, separadas por comas')
+    ap.add_argument('--efectos', default=None,
+                    help='solo para este vídeo: "zoom,pegatinas,destellos" (los que quieras) o "ninguno"')
+    a = ap.parse_args(argv)
+    if not herramientas_ok():
+        return _resultado({'error': 'Falta FFmpeg.'}, 1)
+    # un nombre suelto se busca en entrada/ («todos» = todos los de entrada/, en orden)
+    if [v.lower() for v in a.videos] == ['todos']:
+        a.videos = [str(p) for p in listar_clips()]
+    videos = []
+    for v in a.videos:
+        p = Path(v).expanduser()
+        videos.append(p if p.is_file() or not (ENTRADA / v).is_file() else ENTRADA / v)
+    faltan = [str(v) for v in videos if not v.is_file()]
+    if faltan or not videos:
+        return _resultado({'error': 'No encuentro estos vídeos: ' + (', '.join(faltan) or 'entrada/ está vacía')}, 1)
+    perfil = marca.activo() or marca.base_inicial('(sin marca)')
+    if a.estilo:
+        perfil['estilo'] = a.estilo
+    efectos_video = marca.efectos(perfil)
+    if a.efectos is not None:
+        pedidos = {x.strip().lower() for x in a.efectos.split(',')}
+        efectos_video = {k: k in pedidos for k in efectos_video}
+    modo = perfil['vertical']
+    res = {'marca': perfil['nombre'], 'originales': [str(v) for v in videos]}
+
+    video = videos[0]
+    if len(videos) > 1:
+        print(f'Uniendo {len(videos)} vídeos...', flush=True)
+        video = unir_clips(videos, modo)
+        res['unido'] = str(video)
+    info = info_video(video)
+    res['duracion_original_s'] = round(info['duracion'], 2)
+
+    if not a.sin_cortes:
+        print('Buscando silencios...', flush=True)
+        silencios, _ = detectar_silencios(video, None, MIN_SILENCIO)
+        cortes = proponer_cortes(silencios, info['duracion'], MARGEN)
+        res['silencios_quitados'] = len(cortes)
+        if cortes:
+            print(f'Quitando {len(cortes)} silencio(s)...', flush=True)
+            video, _ = exportar_cortado(video, cortes, modo)
+            res['cortado'] = str(video)
+
+    if a.sin_subtitulos:
+        if 'cortado' not in res:   # sin cortes ni subtítulos: al menos se pasa a vertical
+            video, _ = exportar_cortado(video, [], modo)
+        res['resultado'] = str(video)
+    else:
+        print('Escuchando el vídeo para los subtítulos (la primera vez tarda más)...', flush=True)
+        dest = [x.strip() for x in a.destacar.split(',') if x.strip()]
+        out, srt, inf = subtitular(video, destacar_extra=dest, perfil=perfil,
+                                   efectos_forzados=efectos_video,
+                                   aviso=lambda m: print(m, flush=True))
+        ed = json.loads(out.with_suffix('.edicion.json').read_text(encoding='utf-8'))
+        res.update({'resultado': str(out), 'subtitulos_srt': str(srt),
+                    'texto': ' '.join(p['w'] for s in ed['subtitulos'] for p in s['palabras']),
+                    'destacadas': inf['destacadas'], 'pegatinas': inf['pegatinas'], 'efectos': efectos_video,
+                    'para_corregir': str(video)})
+    res['duracion_final_s'] = round(info_video(res['resultado'])['duracion'], 2)
+    return _resultado(res)
+
+
+def cli_estado(argv):
+    """Lo que Claude necesita saber al empezar: carpeta, marca, vídeos por editar, referencias y editados."""
+    import marca
+    p = marca.activo()
+    refs = [x for x in REFERENCIAS.rglob('*') if x.is_file()
+            and x.suffix.lower() in VIDEO_EXT + ('.jpg', '.jpeg', '.png', '.webp')]
+    editados = sorted(SALIDA.glob('*_editado_*.mp4'), key=lambda x: x.stat().st_mtime, reverse=True)
+    return _resultado({
+        'version': VERSION, 'motor': str(ROOT), 'carpeta': str(TRABAJO),
+        'instalado': VENV_PY.exists() and bool(shutil.which('ffmpeg')),
+        'marca': p['nombre'] if p else None,
+        'usuarias': [marca.cargar(r)['nombre'] for r in marca.listar()],
+        'videos_para_editar': [{'archivo': x.name, 'segundos': round(info_video(x)['duracion'], 1)}
+                               for x in listar_clips()],
+        'referencias': [str(x.relative_to(REFERENCIAS)) for x in refs][:30],
+        'ultimos_editados': [x.name for x in editados[:5]],
+    })
+
+
+SKILL_DESTINO = Path.home() / '.claude' / 'skills' / 'content-studio'
+MARCA_CLAUDE = '<!-- carpeta de Content Studio IA -->'
+
+
+def cli_preparar(argv):
+    """Crea (o actualiza) la carpeta de trabajo de una chica e instala la skill de Claude Code.
+    Uso: content_studio.py --carpeta "<su carpeta>" preparar"""
+    if TRABAJO == ROOT:
+        return _resultado({'error': 'Indica su carpeta con --carpeta "<ruta>".'}, 1)
+    py = VENV_PY if VENV_PY.exists() else Path(sys.executable)
+    plantilla = (ROOT / 'skill' / 'SKILL.md').read_text(encoding='utf-8')
+    texto = (plantilla.replace('{{PYTHON}}', py.as_posix())
+             .replace('{{MOTOR}}', ROOT.as_posix())
+             .replace('{{CARPETA}}', TRABAJO.as_posix())
+             .replace('{{VERSION}}', VERSION))
+    SKILL_DESTINO.mkdir(parents=True, exist_ok=True)
+    (SKILL_DESTINO / 'SKILL.md').write_text(texto, encoding='utf-8')
+
+    claude_md = TRABAJO / 'CLAUDE.md'
+    nota = None
+    if claude_md.exists() and MARCA_CLAUDE not in claude_md.read_text(encoding='utf-8', errors='replace'):
+        nota = 'Ya había un CLAUDE.md propio en la carpeta: no lo he tocado.'
+    else:
+        claude_md.write_text(
+            f'{MARCA_CLAUDE}\n# Mi carpeta de Content Studio IA\n\n'
+            'Aquí se editan mis vídeos con Content Studio IA, hablando con Claude. Para todo lo que tenga que ver\n'
+            'con vídeos, mi marca o mis referencias, usa siempre la skill **content-studio** (sin menús ni terminal).\n\n'
+            '- `entrada/`: los vídeos que quiero editar.\n'
+            '- `salida/`: los vídeos terminados.\n'
+            '- `marca/`: mi marca (colores, letras, estilo).\n'
+            '- `REFERENCIAS/`: capturas o vídeos que me gustan.\n\n'
+            'Si la skill content-studio no aparece, Content Studio IA no está instalado o hay que reiniciar Claude:\n'
+            'díselo en una frase y sigue el INSTALAR.md de https://github.com/contentstudioiaAMRB/content-studio-ia\n',
+            encoding='utf-8')
+    (TRABAJO / 'EMPIEZA AQUÍ.txt').write_text(
+        'CONTENT STUDIO IA — CÓMO EDITAR TU VÍDEO\n\n'
+        '1. Pon tu vídeo en la carpeta «entrada» (arrástralo ahí).\n'
+        '2. Abre Claude, pestaña Code, y empieza una conversación nueva eligiendo esta carpeta:\n'
+        '   Escritorio → Content Studio ediciones. (Si pregunta si confías en la carpeta, di que sí.)\n'
+        '3. Escribe:  Hola, edita mi vídeo\n'
+        '4. Tu vídeo editado aparece en la carpeta «salida». Tu original no se toca.\n\n'
+        'Para cambiar algo, díselo en la misma conversación: «hazlo más corto», «ponle stickers»,\n'
+        '«cambia el color de los subtítulos»… La primera vez, Claude te enseña el estilo de partida\n'
+        'y te pregunta si lo usas o lo cambias.\n\n'
+        'Si Claude te pide permiso para ejecutar algo del programa, pulsa «Permitir siempre».\n',
+        encoding='utf-8')
+    return _resultado({'carpeta': str(TRABAJO), 'skill': str(SKILL_DESTINO / 'SKILL.md'), 'nota': nota})
+
+
 def main():
     print(f'\nCONTENT STUDIO IA — versión {VERSION}')
     perfil = perfil_activo(avisar=False)
@@ -816,6 +1096,14 @@ if __name__ == '__main__':
         sys.exit(cli(sys.argv[2:]))
     if len(sys.argv) > 1 and sys.argv[1] == 'subtitular':
         sys.exit(cli_subtitular(sys.argv[2:]))
+    ordenes = {'marca': cli_marca, 'editar': cli_editar, 'estado': cli_estado, 'preparar': cli_preparar}
+    if len(sys.argv) > 1 and sys.argv[1] in ordenes:
+        try:
+            sys.exit(ordenes[sys.argv[1]](sys.argv[2:]))
+        except SystemExit:
+            raise
+        except Exception as e:   # el chat necesita una línea clara, no un volcado
+            sys.exit(_resultado({'error': str(e)[-1500:]}, 1))
     if len(sys.argv) > 1 and sys.argv[1] == 'referencias':
         ap = argparse.ArgumentParser(prog='content_studio.py referencias')
         ap.add_argument('--carpeta', default=None)

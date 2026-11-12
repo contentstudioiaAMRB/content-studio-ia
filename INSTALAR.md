@@ -75,18 +75,18 @@ Pregunta **una sola vez** por todo lo que falte, en un mensaje como este (adapta
 > - **FFmpeg** (el motor que corta y monta los vídeos, unos 200 MB)
 > - **Modelo de voz** para los subtítulos automáticos (1,6 GB, se descarga una vez; si prefieres,
 >   se bajará solo la primera vez que pongas subtítulos)
-> - (Windows) **Acceso directo** «Content Studio IA» en el Escritorio
 >
 > ¿Te lo instalo? Puedes decirme sí a todo o solo a algunas.
 
 Después vuelve a ejecutar el instalador **añadiendo solo los permisos que ella haya dado**:
 
-- **Windows**: `-InstalarPython`, `-InstalarFFmpeg`, `-DescargarModelo`, `-AccesoDirecto`
+- **Windows**: `-InstalarPython`, `-InstalarFFmpeg`, `-DescargarModelo`
   (usa `winget`, el instalador oficial de Windows; Python se instala solo para su usuario).
   Si Windows muestra una ventana pidiendo permiso, dile que pulse «Sí».
 - **Mac**: `--instalar-python`, `--instalar-ffmpeg`, `--descargar-modelo` (usa Homebrew).
 
-Pregunta también por el modelo de voz y el acceso directo aunque no falte nada más.
+Pregunta también por el modelo de voz aunque no falte nada más. No ofrezcas el acceso directo del
+Escritorio: abre el menú antiguo de terminal, y ahora se edita desde el chat de Claude.
 
 ### Mac sin Homebrew (código 20)
 
@@ -117,17 +117,49 @@ subtítulos con las tipografías de una marca de ejemplo, zoom, destellos y pega
 Si quiere ver ese vídeo de prueba: `<python del .venv> instalador/prueba_exportacion.py --conservar`
 (queda en `salida/`).
 
-## Paso 6. Explicarle cómo empezar
+## Paso 6. Su carpeta y la skill de Claude
 
-Con `RESULTADO: OK`, díselo así de claro:
+Content Studio IA se usa desde el chat de Claude Code con la skill **content-studio** (nada de ventanas
+negras ni menús de números). Cada usuaria tiene **su propia carpeta de trabajo** en el Escritorio,
+**`Content Studio ediciones`**, separada del programa.
+
+1. Busca la ruta de su Escritorio (puede estar en OneDrive):
+   - Windows: `powershell -NoProfile -Command "[Environment]::GetFolderPath('Desktop')"`
+   - Mac: `~/Desktop`
+2. Crea su carpeta e instala la skill (si ya existían, se actualizan sin borrar nada suyo):
+   - Windows: `"<carpeta>\.venv\Scripts\python.exe" "<carpeta>\content_studio.py" --carpeta "<Escritorio>\Content Studio ediciones" preparar`
+   - Mac: `"<carpeta>/.venv/bin/python" "<carpeta>/content_studio.py" --carpeta "<Escritorio>/Content Studio ediciones" preparar`
+
+   Debe terminar en `RESULTADO: {"carpeta": ..., "skill": ...}`. La skill queda en
+   `~/.claude/skills/content-studio/SKILL.md` (sirve en cualquier carpeta) y su carpeta lleva dentro
+   `entrada/`, `salida/`, `marca/`, `REFERENCIAS/` y un `CLAUDE.md`.
+3. **Ábrele su carpeta** para que la vea (solo abre una ventana, no hace falta permiso):
+   Windows `explorer "<Escritorio>\Content Studio ediciones"` (puede devolver código 1 aunque se abra bien);
+   Mac `open "<Escritorio>/Content Studio ediciones"`.
+
+Si ya tenía vídeos o una marca de la versión 0.6 dentro de la carpeta del programa (`entrada/`, `marca/`),
+díselo y pregúntale si quiere que los copies a su carpeta nueva. No borres los originales.
+
+## Paso 7. Explicarle cómo empezar
+
+Díselo así de claro:
 
 - Está instalado y la prueba de exportación ha salido bien.
-- Para abrirlo: **Windows**, el acceso directo «Content Studio IA» del Escritorio (o doble clic en
-  «Abrir Content Studio IA» dentro de la carpeta). **Mac**, clic derecho en «Abrir Content Studio IA.command»
-  → Abrir (la primera vez).
-- La primera vez, opción **1** del menú para configurar su marca (colores, tipografías, estilo).
-- Sus vídeos van en la carpeta `entrada`, sus referencias en `REFERENCIAS` y los editados salen en `salida`.
-  Sus originales nunca se modifican.
+- Le acabas de abrir **su carpeta** «Content Studio ediciones» del Escritorio: sus vídeos van en `entrada`,
+  las capturas o vídeos que le gusten en `REFERENCIAS`, y los editados salen en `salida`.
+- **Todo se hace hablando con Claude.** Dale estos pasos numerados, tal cual (también están en el archivo
+  «EMPIEZA AQUÍ» de su carpeta):
+  1. Cierra Claude del todo (en Windows también desde el icono junto al reloj; en Mac Cmd+Q) y vuelve a abrirlo.
+  2. Pon tu vídeo en la carpeta **entrada**.
+  3. En la pestaña **Code**, empieza una conversación nueva con la carpeta
+     **Escritorio → Content Studio ediciones** (si pregunta si confías en la carpeta, di que sí).
+  4. Escribe: **Hola, edita mi vídeo**
+  5. Tu vídeo editado aparece en **salida**.
+- La primera vez, Claude le enseña el estilo de partida y le pregunta con botones si lo usa o lo cambia.
+- Después basta con pedirlo con sus palabras, por ejemplo: «Edita mi vídeo, quita los silencios, ponle
+  subtítulos con mis colores y stickers donde vayan». Claude lo edita y se lo enseña. Sus originales nunca
+  se modifican.
+- Si Claude le pide permiso para ejecutar algo del programa, puede pulsar «Permitir siempre».
 - Si el modelo de voz no se descargó, la primera vez que ponga subtítulos tardará más (1,6 GB).
 - Para actualizar en el futuro, basta con volver a pegar el mismo mensaje de instalación.
 
@@ -142,6 +174,8 @@ Con `RESULTADO: OK`, díselo así de claro:
   trae subtítulos). Pide permiso y ejecuta el instalador con `--instalar-ffmpeg`.
 - **`Letra de emojis` FALTA** (raro): las pegatinas de emoji no funcionarán, el resto sí. Las pegatinas en
   PNG (`recursos/pegatinas/<palabra>.png`) siguen funcionando.
+- **En una conversación nueva Claude no conoce la skill content-studio**: repite el paso 6 y que cierre Claude
+  del todo y lo vuelva a abrir.
 - **Sin internet** o descargas cortadas: repite cuando haya conexión; lo hecho no se repite.
 - Cualquier otro error: copia las líneas `FALTA`/`FALLA` y dile que se las pase a quien le compartió el programa.
 

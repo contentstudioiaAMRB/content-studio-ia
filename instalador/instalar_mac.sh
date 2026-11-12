@@ -1,5 +1,5 @@
 #!/bin/bash
-# Content Studio IA - instalador para Mac (v0.6)
+# Content Studio IA - instalador para Mac (v0.7)
 # Comprueba lo que hace falta y, si falta algo, explica qué es y pide permiso antes de instalarlo.
 # Todo lo de Python va dentro de la carpeta del programa (.venv).
 #
@@ -73,7 +73,7 @@ comprobar() {
 }
 
 echo
-echo "CONTENT STUDIO IA 0.6 - INSTALACIÓN EN MAC"
+echo "CONTENT STUDIO IA 0.7 - INSTALACIÓN EN MAC"
 echo "Carpeta del programa: $RAIZ"
 cargar_brew
 poner_ffmpeg_full
