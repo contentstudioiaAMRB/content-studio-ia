@@ -96,6 +96,14 @@ RefrescarPath
 
 if ($SoloComprobar) { Comprobar }
 
+# Windows no admite rutas de más de 260 letras y algunas bibliotecas tienen archivos muy hondos
+# (onnxruntime: unas 125 letras dentro de .venv). Por eso la carpeta del programa no puede ser muy larga.
+if ($Raiz.Length -gt 120 -and -not (Test-Path $VenvPy)) {
+    Mal "La ruta de la carpeta del programa es demasiado larga para Windows ($($Raiz.Length) letras; máximo 120)."
+    Mal 'Mueve la carpeta a un sitio más corto, por ejemplo Documentos\Content Studio IA.'
+    Resultado 16 'FALLA ruta de la carpeta demasiado larga (muévela a Documentos\Content Studio IA)'
+}
+
 # ---------------------------------------------------------------- 1. Python
 Titulo "1/5  Python 3.$PyMin o superior (el lenguaje en el que está hecho el programa)"
 $py = BuscarPython

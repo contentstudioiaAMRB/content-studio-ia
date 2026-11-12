@@ -62,6 +62,7 @@ Puede tardar varios minutos (descarga las bibliotecas). Ejecútalo con un tiempo
 | 11 | `FALTA FFmpeg ...` | Paso 4: pide permiso para FFmpeg. |
 | 12 | `FALLA la instalación de bibliotecas` | Comprueba internet y repite el paso 3 una vez. |
 | 14 / 15 | `FALTA algo` / `FALLA la prueba` | Lee las líneas `FALTA`/`FALLA` y mira «Si algo falla». |
+| 16 | `FALLA ruta ... demasiado larga` (Windows) | Pídele permiso para mover la carpeta a `Documentos\Content Studio IA` (o `C:\Content Studio IA`), muévela y repite el paso 3. |
 | 20 | `FALTA Homebrew` (Mac) | Paso 4, Mac. |
 | 21 / 22 | `NO COMPATIBLE` (Mac) | Explícale el motivo con amabilidad y detente. |
 
